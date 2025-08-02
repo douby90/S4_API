@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, AlertTriangle, Eye, RefreshCw } from 'lucide-react';
-import { SubmissionResult, VerificationResult, ApiClient } from '../types';
+import { SubmissionResult, VerificationResult } from '../types';
+import { ApiClient } from '../utils/apiClient';
 
 interface DataVerificationProps {
   submissionResults: SubmissionResult[];
