@@ -6,12 +6,14 @@ import { ApiClient } from '../utils/apiClient';
 interface EndpointDiscoveryProps {
   apiClient: ApiClient;
   onEndpointSelected: (endpoint: ApiEndpoint) => void;
+  onError?: (message: string) => void;
   disabled?: boolean;
 }
 
 export const EndpointDiscovery: React.FC<EndpointDiscoveryProps> = ({
   apiClient,
   onEndpointSelected,
+  onError,
   disabled
 }) => {
   const [endpoints, setEndpoints] = useState<ApiEndpoint[]>([]);
@@ -37,7 +39,9 @@ export const EndpointDiscovery: React.FC<EndpointDiscoveryProps> = ({
         setError('No endpoints were discovered. The API may not expose OpenAPI documentation.');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to discover endpoints');
+      const message = err instanceof Error ? err.message : 'Failed to discover endpoints';
+      setError(message);
+      onError?.(message);
     } finally {
       setIsDiscovering(false);
     }
