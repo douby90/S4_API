@@ -58,7 +58,7 @@ export const DataMapping: React.FC<DataMappingProps> = ({
   };
 
   const generatePreviewPayload = (rowIndex: number) => {
-    const row = spreadsheetData.roots[rowIndex];
+    const row = spreadsheetData.rows[rowIndex];
     const payload: any = {};
     
     mappings.forEach(mapping => {
