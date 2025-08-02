@@ -62,7 +62,7 @@ export const ApiCredentialsForm: React.FC<ApiCredentialsProps> = ({
     } catch (err) {
       setValidationStatus('error');
       const errorMessage = err instanceof Error ? err.message : 'Connection failed';
-      setError(`Failed to connect to the API: ${errorMessage}\nPossible causes:\n• Incorrect URL or server not reachable\n• Network connectivity issues\n• Server is down or not responding\n• CORS policy blocking the request`);
+
       setDebugInfo('Check the browser console for more detailed error information.');
     } finally {
       setIsValidating(false);

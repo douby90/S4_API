@@ -24,7 +24,7 @@ export class ApiClient {
 
   async testConnection(): Promise<boolean> {
     try {
-      const response = await this.makeRequest(this.credentials.baseUrl);
+
 
       if (!response.ok) {
         throw new Error(`Connection failed: ${response.status} ${response.statusText}`);
