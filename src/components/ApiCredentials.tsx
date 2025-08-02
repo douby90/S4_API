@@ -66,8 +66,8 @@ export const ApiCredentialsForm: React.FC<ApiCredentialsProps> = ({
       const errorMessage = err instanceof Error ? err.message : 'Connection failed';
       setError(errorMessage);
       onError?.(errorMessage);
-      console.error('Error validating credentials:', errorMessage);
-      setDebugInfo('Check the browser console for more detailed error information.');
+      console.error('Error validating credentials:', err);
+      setDebugInfo('This may indicate a network or CORS issue. Check the browser console for more details.');
     } finally {
       setIsValidating(false);
     }

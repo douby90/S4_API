@@ -23,7 +23,11 @@ export class ApiClient {
       headers,
     });
 
-    return response;
+      return response;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw new Error(`Network or CORS error: ${message}`);
+    }
   }
 
   async testConnection(): Promise<boolean> {
