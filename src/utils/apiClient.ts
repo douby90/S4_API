@@ -10,16 +10,21 @@ export class ApiClient {
   }
 
   private async makeRequest(url: string, options: RequestInit = {}): Promise<Response> {
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        'Authorization': this.authHeader,
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-    });
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          'Authorization': this.authHeader,
+          'Content-Type': 'application/json',
+          ...options.headers,
+        },
+      });
 
-    return response;
+      return response;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw new Error(`Network or CORS error: ${message}`);
+    }
   }
 
   async testConnection(): Promise<boolean> {
