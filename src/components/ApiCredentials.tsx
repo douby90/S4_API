@@ -5,12 +5,14 @@ import { ApiClient } from '../utils/apiClient';
 
 interface ApiCredentialsProps {
   onCredentialsValidated: (credentials: ApiCredentials, client: ApiClient) => void;
+  onError?: (message: string) => void;
   disabled?: boolean;
 }
 
-export const ApiCredentialsForm: React.FC<ApiCredentialsProps> = ({ 
-  onCredentialsValidated, 
-  disabled 
+export const ApiCredentialsForm: React.FC<ApiCredentialsProps> = ({
+  onCredentialsValidated,
+  onError,
+  disabled
 }) => {
   const [credentials, setCredentials] = useState<ApiCredentials>({
     baseUrl: '',
@@ -63,6 +65,7 @@ export const ApiCredentialsForm: React.FC<ApiCredentialsProps> = ({
       setValidationStatus('error');
       const errorMessage = err instanceof Error ? err.message : 'Connection failed';
       setError(errorMessage);
+      onError?.(errorMessage);
       console.error('Error validating credentials:', errorMessage);
       setDebugInfo('Check the browser console for more detailed error information.');
     } finally {

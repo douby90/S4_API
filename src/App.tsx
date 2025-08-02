@@ -6,10 +6,11 @@ import { EndpointDiscovery } from './components/EndpointDiscovery';
 import { DataMapping } from './components/DataMapping';
 import { SubmissionResults } from './components/SubmissionResults';
 import { DataVerification } from './components/DataVerification';
+import { ErrorPage } from './components/ErrorPage';
 import { SpreadsheetData, ApiCredentials, ApiEndpoint, FieldMapping, SubmissionResult } from './types';
 import { ApiClient } from './utils/apiClient';
 
-type Step = 'upload' | 'credentials' | 'endpoints' | 'mapping' | 'submission' | 'verification';
+type Step = 'upload' | 'credentials' | 'endpoints' | 'mapping' | 'submission' | 'verification' | 'error';
 
 function App() {
   const [currentStep, setCurrentStep] = useState<Step>('upload');
@@ -19,6 +20,7 @@ function App() {
   const [selectedEndpoint, setSelectedEndpoint] = useState<ApiEndpoint | null>(null);
   const [fieldMappings, setFieldMappings] = useState<FieldMapping[]>([]);
   const [submissionResults, setSubmissionResults] = useState<SubmissionResult[]>([]);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleFileUpload = (data: SpreadsheetData) => {
     setSpreadsheetData(data);
@@ -44,6 +46,11 @@ function App() {
   const handleSubmissionComplete = (results: SubmissionResult[]) => {
     setSubmissionResults(results);
     setCurrentStep('verification');
+  };
+
+  const handleError = (message: string) => {
+    setErrorMessage(message);
+    setCurrentStep('error');
   };
 
   const getStepIcon = (step: Step) => {
@@ -100,58 +107,60 @@ function App() {
       </div>
 
       {/* Progress Steps */}
-      <div className="bg-white border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="py-4">
-            <nav aria-label="Progress">
-              <ol className="flex items-center justify-between">
-                {steps.map((step, index) => {
-                  const status = getStepStatus(step);
-                  return (
-                    <li key={step} className="flex items-center">
-                      <div className="flex items-center">
-                        <div className={`
-                          flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all
-                          ${status === 'completed' 
-                            ? 'bg-green-600 border-green-600 text-white' 
-                            : status === 'current'
-                            ? 'bg-blue-600 border-blue-600 text-white'
-                            : 'bg-white border-gray-300 text-gray-400'
-                          }
-                        `}>
-                          {status === 'completed' ? (
-                            <CheckCircle className="h-4 w-4" />
-                          ) : (
-                            getStepIcon(step)
-                          )}
+      {currentStep !== 'error' && (
+        <div className="bg-white border-b border-gray-100">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="py-4">
+              <nav aria-label="Progress">
+                <ol className="flex items-center justify-between">
+                  {steps.map((step, index) => {
+                    const status = getStepStatus(step);
+                    return (
+                      <li key={step} className="flex items-center">
+                        <div className="flex items-center">
+                          <div className={`
+                            flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all
+                            ${status === 'completed'
+                              ? 'bg-green-600 border-green-600 text-white'
+                              : status === 'current'
+                              ? 'bg-blue-600 border-blue-600 text-white'
+                              : 'bg-white border-gray-300 text-gray-400'
+                            }
+                          `}>
+                            {status === 'completed' ? (
+                              <CheckCircle className="h-4 w-4" />
+                            ) : (
+                              getStepIcon(step)
+                            )}
+                          </div>
+                          <span className={`
+                            ml-2 text-sm font-medium transition-all
+                            ${status === 'completed' || status === 'current'
+                              ? 'text-gray-900'
+                              : 'text-gray-500'
+                            }
+                          `}>
+                            {getStepTitle(step)}
+                          </span>
                         </div>
-                        <span className={`
-                          ml-2 text-sm font-medium transition-all
-                          ${status === 'completed' || status === 'current'
-                            ? 'text-gray-900'
-                            : 'text-gray-500'
-                          }
-                        `}>
-                          {getStepTitle(step)}
-                        </span>
-                      </div>
-                      {index < steps.length - 1 && (
-                        <div className={`
-                          hidden sm:block w-16 h-0.5 ml-4 transition-all
-                          ${getStepStatus(steps[index + 1]) !== 'pending' 
-                            ? 'bg-green-600' 
-                            : 'bg-gray-300'
-                          }
-                        `} />
-                      )}
-                    </li>
-                  );
-                })}
-              </ol>
-            </nav>
+                        {index < steps.length - 1 && (
+                          <div className={`
+                            hidden sm:block w-16 h-0.5 ml-4 transition-all
+                            ${getStepStatus(steps[index + 1]) !== 'pending'
+                              ? 'bg-green-600'
+                              : 'bg-gray-300'
+                            }
+                          `} />
+                        )}
+                      </li>
+                    );
+                  })}
+                </ol>
+              </nav>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -179,7 +188,7 @@ function App() {
                 </p>
               </div>
               <div className="max-w-2xl mx-auto">
-                <ApiCredentialsForm onCredentialsValidated={handleCredentialsValidated} />
+                <ApiCredentialsForm onCredentialsValidated={handleCredentialsValidated} onError={handleError} />
               </div>
             </div>
           )}
@@ -193,9 +202,10 @@ function App() {
                 </p>
               </div>
               <div className="max-w-4xl mx-auto">
-                <EndpointDiscovery 
-                  apiClient={apiClient} 
-                  onEndpointSelected={handleEndpointSelected} 
+                <EndpointDiscovery
+                  apiClient={apiClient}
+                  onEndpointSelected={handleEndpointSelected}
+                  onError={handleError}
                 />
               </div>
             </div>
@@ -234,6 +244,7 @@ function App() {
                   mappings={fieldMappings}
                   apiClient={apiClient}
                   onSubmissionComplete={handleSubmissionComplete}
+                  onError={handleError}
                 />
               </div>
             </div>
@@ -257,8 +268,20 @@ function App() {
             </div>
           )}
 
+          {currentStep === 'error' && errorMessage && (
+            <div className="max-w-2xl mx-auto">
+              <ErrorPage
+                message={errorMessage}
+                onRetry={() => {
+                  setErrorMessage(null);
+                  setCurrentStep('upload');
+                }}
+              />
+            </div>
+          )}
+
           {/* Data Summary Panel */}
-          {spreadsheetData && (
+          {currentStep !== 'error' && spreadsheetData && (
             <div className="max-w-4xl mx-auto">
               <div className="bg-white p-4 rounded-lg border border-gray-200">
                 <h4 className="text-sm font-medium text-gray-900 mb-2">Loaded Data Summary</h4>

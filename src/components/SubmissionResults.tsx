@@ -9,6 +9,7 @@ interface SubmissionResultsProps {
   mappings: FieldMapping[];
   apiClient: ApiClient;
   onSubmissionComplete: (results: SubmissionResult[]) => void;
+  onError?: (message: string) => void;
 }
 
 export const SubmissionResults: React.FC<SubmissionResultsProps> = ({
@@ -16,7 +17,8 @@ export const SubmissionResults: React.FC<SubmissionResultsProps> = ({
   selectedEndpoint,
   mappings,
   apiClient,
-  onSubmissionComplete
+  onSubmissionComplete,
+  onError
 }) => {
   const [results, setResults] = useState<SubmissionResult[]>([]);
   const [isRunning, setIsRunning] = useState(false);
@@ -45,7 +47,7 @@ export const SubmissionResults: React.FC<SubmissionResultsProps> = ({
     return payload;
   };
 
-  const submitRow = async (rowIndex: number) => {
+  const submitRow = async (rowIndex: number): Promise<boolean> => {
     const payload = generatePayload(rowIndex);
     
     setResults(prev => prev.map(r => 
@@ -56,28 +58,32 @@ export const SubmissionResults: React.FC<SubmissionResultsProps> = ({
 
     try {
       const response = await apiClient.submitData(selectedEndpoint, payload);
-      const responseData = response.ok ? await response.json() : null;
+      const responseData = await response.json();
 
-      setResults(prev => prev.map(r => 
-        r.rowIndex === rowIndex 
-          ? { 
-              ...r, 
-              status: response.ok ? 'success' : 'error',
+      setResults(prev => prev.map(r =>
+        r.rowIndex === rowIndex
+          ? {
+              ...r,
+              status: 'success',
               response: responseData,
-              error: response.ok ? undefined : `HTTP ${response.status}: ${response.statusText}`
+              error: undefined
             }
           : r
       ));
+      return true;
     } catch (error) {
-      setResults(prev => prev.map(r => 
-        r.rowIndex === rowIndex 
-          ? { 
-              ...r, 
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      setResults(prev => prev.map(r =>
+        r.rowIndex === rowIndex
+          ? {
+              ...r,
               status: 'error',
-              error: error instanceof Error ? error.message : 'Unknown error'
+              error: message
             }
           : r
       ));
+      onError?.(message);
+      return false;
     }
   };
 
@@ -89,14 +95,18 @@ export const SubmissionResults: React.FC<SubmissionResultsProps> = ({
       if (isPaused) break;
       
       setCurrentRow(i);
-      await submitRow(i);
+      const success = await submitRow(i);
+      if (!success) {
+        setIsRunning(false);
+        return;
+      }
       
       // Small delay between requests to prevent overwhelming the API
       await new Promise(resolve => setTimeout(resolve, 500));
     }
 
     setIsRunning(false);
-    
+
     if (currentRow >= spreadsheetData.rows.length - 1) {
       onSubmissionComplete(results);
     }

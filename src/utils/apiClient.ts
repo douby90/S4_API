@@ -26,7 +26,11 @@ export class ApiClient {
     try {
       const response = await this.makeRequest(this.credentials.baseUrl);
       if (!response.ok) {
-        throw new Error(`Connection failed: ${response.status} ${response.statusText}`);
+        let detail = '';
+        try {
+          detail = await response.text();
+        } catch {}
+        throw new Error(`Connection failed: ${response.status} ${response.statusText}${detail ? ` - ${detail}` : ''}`);
       }
       return true;
     } catch (error) {
@@ -189,13 +193,21 @@ export class ApiClient {
   async submitData(endpoint: ApiEndpoint, data: any): Promise<Response> {
     const url = endpoint.fullUrl;
     const method = endpoint.method;
-    
+
     const options: RequestInit = {
       method,
       body: ['POST', 'PUT'].includes(method) ? JSON.stringify(data) : undefined
     };
 
-    return this.makeRequest(url, options);
+    const response = await this.makeRequest(url, options);
+    if (!response.ok) {
+      let detail = '';
+      try {
+        detail = await response.text();
+      } catch {}
+      throw new Error(`HTTP ${response.status}: ${response.statusText}${detail ? ` - ${detail}` : ''}`);
+    }
+    return response;
   }
 
   async verifyData(getEndpoint: string, identifier: string): Promise<Response> {
