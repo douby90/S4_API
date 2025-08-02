@@ -10,15 +10,18 @@ export class ApiClient {
   }
 
   private async makeRequest(url: string, options: RequestInit = {}): Promise<Response> {
-    try {
-      const response = await fetch(url, {
-        ...options,
-        headers: {
-          'Authorization': this.authHeader,
-          'Content-Type': 'application/json',
-          ...options.headers,
-        },
-      });
+    const headers = new Headers(options.headers || {});
+
+    headers.set('Authorization', this.authHeader);
+
+    if (options.body !== undefined && options.body !== null) {
+      headers.set('Content-Type', 'application/json');
+    }
+
+    const response = await fetch(url, {
+      ...options,
+      headers,
+    });
 
       return response;
     } catch (err) {
