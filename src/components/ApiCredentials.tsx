@@ -21,11 +21,13 @@ export const ApiCredentialsForm: React.FC<ApiCredentialsProps> = ({
   const [isValidating, setIsValidating] = useState(false);
   const [validationStatus, setValidationStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [error, setError] = useState('');
+  const [debugInfo, setDebugInfo] = useState('');
 
   const handleInputChange = (field: keyof ApiCredentials, value: string) => {
     setCredentials(prev => ({ ...prev, [field]: value }));
     setValidationStatus('idle');
     setError('');
+    setDebugInfo('');
   };
 
   const validateCredentials = async () => {
@@ -44,21 +46,30 @@ export const ApiCredentialsForm: React.FC<ApiCredentialsProps> = ({
 
     setIsValidating(true);
     setError('');
+    setDebugInfo('');
 
     try {
       const client = new ApiClient(credentials);
+      
+      // Add debug information
+      setDebugInfo(`Attempting connection to: ${credentials.baseUrl}\nUsername: ${credentials.username}\nTesting authentication...`);
+      
       const isConnected = await client.testConnection();
       
       if (isConnected) {
         setValidationStatus('success');
+        setDebugInfo('Connection successful! Server responded correctly.');
         onCredentialsValidated(credentials, client);
       } else {
         setValidationStatus('error');
-        setError('Failed to connect to the API. Please check your credentials and URL.');
+        setError('Failed to connect to the API. This could be due to:\n• Incorrect URL or server not reachable\n• Network connectivity issues\n• Server is down or not responding\n• CORS policy blocking the request');
+        setDebugInfo('Check the browser console for more detailed error information.');
       }
     } catch (err) {
       setValidationStatus('error');
-      setError(err instanceof Error ? err.message : 'Connection failed');
+      const errorMessage = err instanceof Error ? err.message : 'Connection failed';
+      setError(`Connection error: ${errorMessage}`);
+      setDebugInfo('This is typically a network connectivity issue or CORS policy restriction.');
     } finally {
       setIsValidating(false);
     }
@@ -157,14 +168,24 @@ export const ApiCredentialsForm: React.FC<ApiCredentialsProps> = ({
         {error && (
           <div className="mt-4 flex items-center space-x-2 p-3 bg-red-50 border border-red-200 rounded-md">
             <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0" />
-            <p className="text-sm text-red-800">{error}</p>
+            <div className="flex-1">
+              <p className="text-sm text-red-800 whitespace-pre-line">{error}</p>
+              {debugInfo && (
+                <p className="text-xs text-red-600 mt-2 italic">{debugInfo}</p>
+              )}
+            </div>
           </div>
         )}
 
         {validationStatus === 'success' && (
           <div className="mt-4 flex items-center space-x-2 p-3 bg-green-50 border border-green-200 rounded-md">
             <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
-            <p className="text-sm text-green-800">Connection successful! Ready to discover endpoints.</p>
+            <div className="flex-1">
+              <p className="text-sm text-green-800">Connection successful! Ready to discover endpoints.</p>
+              {debugInfo && (
+                <p className="text-xs text-green-600 mt-1">{debugInfo}</p>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -175,6 +196,28 @@ export const ApiCredentialsForm: React.FC<ApiCredentialsProps> = ({
           <div className="text-sm text-blue-800">
             <p className="font-medium mb-1">Security Notice</p>
             <p>Your credentials are only used for this session and are never stored permanently. All connections use HTTPS when available.</p>
+            <p className="mt-2 text-xs">
+              <strong>Troubleshooting:</strong> If you're getting connection errors, check:
+              <br />• URL format (should include https:// or http://)
+              <br />• Network connectivity to the SAP server
+              <br />• CORS policy (may need server-side configuration)
+              <br />• Firewall or proxy settings
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <div className="flex items-start space-x-2">
+          <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+          <div className="text-sm text-yellow-800">
+            <p className="font-medium mb-1">Common SAP API URL Formats</p>
+            <div className="text-xs space-y-1 font-mono">
+              <p>• https://[tenant].successfactors.com/odata/v2</p>
+              <p>• https://[system].s4hana.ondemand.com/sap/opu/odata/sap/</p>
+              <p>• https://[tenant].hana.ondemand.com/[app]/api</p>
+              <p>• https://api.sap.com/[service]/v1</p>
+            </div>
           </div>
         </div>
       </div>
