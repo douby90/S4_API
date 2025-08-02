@@ -24,19 +24,16 @@ export class ApiClient {
 
   async testConnection(): Promise<boolean> {
     try {
-      console.log('Testing connection to:', this.credentials.baseUrl);
-      console.log('Using username:', this.credentials.username);
-      
       const response = await this.makeRequest(this.credentials.baseUrl);
-      console.log('Response status:', response.status);
-      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
-      
-      // Accept any response that indicates the server is reachable and credentials are being processed
-      // This includes 200, 401 (unauthorized but server responded), 403 (forbidden but server responded)
-      return response.status < 500;
+
+      if (!response.ok) {
+        throw new Error(`Connection failed: ${response.status} ${response.statusText}`);
+      }
+
+      return true;
     } catch (error) {
       console.error('Connection test failed:', error);
-      return false;
+      throw error;
     }
   }
 

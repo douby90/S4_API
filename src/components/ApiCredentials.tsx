@@ -50,26 +50,20 @@ export const ApiCredentialsForm: React.FC<ApiCredentialsProps> = ({
 
     try {
       const client = new ApiClient(credentials);
-      
+
       // Add debug information
       setDebugInfo(`Attempting connection to: ${credentials.baseUrl}\nUsername: ${credentials.username}\nTesting authentication...`);
-      
-      const isConnected = await client.testConnection();
-      
-      if (isConnected) {
-        setValidationStatus('success');
-        setDebugInfo('Connection successful! Server responded correctly.');
-        onCredentialsValidated(credentials, client);
-      } else {
-        setValidationStatus('error');
-        setError('Failed to connect to the API. This could be due to:\n• Incorrect URL or server not reachable\n• Network connectivity issues\n• Server is down or not responding\n• CORS policy blocking the request');
-        setDebugInfo('Check the browser console for more detailed error information.');
-      }
+
+      await client.testConnection();
+
+      setValidationStatus('success');
+      setDebugInfo('Connection successful! Server responded correctly.');
+      onCredentialsValidated(credentials, client);
     } catch (err) {
       setValidationStatus('error');
       const errorMessage = err instanceof Error ? err.message : 'Connection failed';
-      setError(`Connection error: ${errorMessage}`);
-      setDebugInfo('This is typically a network connectivity issue or CORS policy restriction.');
+      setError(`Failed to connect to the API: ${errorMessage}\nPossible causes:\n• Incorrect URL or server not reachable\n• Network connectivity issues\n• Server is down or not responding\n• CORS policy blocking the request`);
+      setDebugInfo('Check the browser console for more detailed error information.');
     } finally {
       setIsValidating(false);
     }
