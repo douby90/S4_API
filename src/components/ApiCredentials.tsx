@@ -50,10 +50,10 @@ export const ApiCredentialsForm: React.FC<ApiCredentialsProps> = ({
 
     try {
       const client = new ApiClient(credentials);
-      
+
       // Add debug information
       setDebugInfo(`Attempting connection to: ${credentials.baseUrl}\nUsername: ${credentials.username}\nTesting authentication...`);
-      
+
       await client.testConnection();
 
       setValidationStatus('success');
@@ -62,7 +62,7 @@ export const ApiCredentialsForm: React.FC<ApiCredentialsProps> = ({
     } catch (err) {
       setValidationStatus('error');
       const errorMessage = err instanceof Error ? err.message : 'Connection failed';
-      setError(errorMessage);
+
       setDebugInfo('Check the browser console for more detailed error information.');
     } finally {
       setIsValidating(false);
