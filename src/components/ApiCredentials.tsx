@@ -61,13 +61,17 @@ export const ApiCredentialsForm: React.FC<ApiCredentialsProps> = ({
       setValidationStatus('success');
       setDebugInfo('Connection successful! Server responded correctly.');
       onCredentialsValidated(credentials, client);
-    } catch (err) {
+    } catch (err: unknown) {
       setValidationStatus('error');
       const errorMessage = err instanceof Error ? err.message : 'Connection failed';
       setError(errorMessage);
       onError?.(errorMessage);
       console.error('Error validating credentials:', err);
-      setDebugInfo('This may indicate a network or CORS issue. Check the browser console for more details.');
+      if (errorMessage.includes('insecure API over HTTP')) {
+        setDebugInfo('The page is served over HTTPS and browsers block calls to HTTP APIs. Use an HTTPS endpoint or configure a proxy.');
+      } else {
+        setDebugInfo('This may indicate a network or CORS issue. Check the browser console for more details.');
+      }
     } finally {
       setIsValidating(false);
     }

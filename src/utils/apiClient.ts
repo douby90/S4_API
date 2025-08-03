@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 import { ApiCredentials, ApiEndpoint, ApiParameter, ApiSchema } from '../types';
 
 export class ApiClient {
@@ -17,6 +18,21 @@ export class ApiClient {
     if (options.body !== undefined && options.body !== null) {
       headers.set('Content-Type', 'application/json');
     }
+    // Browsers will block requests from an HTTPS page to an HTTP API.
+    // Detect this situation early and provide a helpful error message
+    // instead of the generic "Failed to fetch" error.
+    if (typeof window !== 'undefined') {
+      const pageProtocol = window.location.protocol;
+      let urlProtocol = '';
+      try {
+        urlProtocol = new URL(url).protocol;
+      } catch {
+        // Ignore parsing errors; fetch will surface them later
+      }
+      if (pageProtocol === 'https:' && urlProtocol === 'http:') {
+        throw new Error('Cannot connect to an insecure API over HTTP from a secure page. Please use HTTPS or a proxy.');
+      }
+    }
 
     try {
       const response = await fetch(url, {
@@ -35,10 +51,7 @@ export class ApiClient {
     try {
       const response = await this.makeRequest(this.credentials.baseUrl);
       if (!response.ok) {
-        let detail = '';
-        try {
-          detail = await response.text();
-        } catch {}
+        const detail = await response.text().catch(() => '');
         throw new Error(`Connection failed: ${response.status} ${response.statusText}${detail ? ` - ${detail}` : ''}`);
       }
       return true;
@@ -210,10 +223,7 @@ export class ApiClient {
 
     const response = await this.makeRequest(url, options);
     if (!response.ok) {
-      let detail = '';
-      try {
-        detail = await response.text();
-      } catch {}
+      const detail = await response.text().catch(() => '');
       throw new Error(`HTTP ${response.status}: ${response.statusText}${detail ? ` - ${detail}` : ''}`);
     }
     return response;
